@@ -175,6 +175,11 @@ corresponds to that version.
 =======
 | Version     | Date       | Pull Request                                               | Subject                                                                                                                                                        |
 |:------------|:-----------| :--------------------------------------------------------- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.42.0     | 2024-07-16 | [\#49154](https://github.com/airbytehq/airbyte/pull/49154) | fix refreshes for connectors using the old SqlOperations                                                 |
+| 0.42.0     | 2024-07-16 | [\#49153](https://github.com/airbytehq/airbyte/pull/49153) | add generationId and syncId to SqlOperations functions                                                 |
+| 0.42.0     | 2024-07-16 | [\#49152](https://github.com/airbytehq/airbyte/pull/49152) | rename and add fields in WriteConfig                                                 |
+| 0.42.0     | 2024-07-16 | [\#49151](https://github.com/airbytehq/airbyte/pull/49151) | remove nullables in JdbcBufferedConsumerFactory                                                 |
+| 0.42.0     | 2024-07-16 | [\#41950](https://github.com/airbytehq/airbyte/pull/41950) | remove unused classes|
 | 0.41.6      | 2024-07-17 | [\#41996](https://github.com/airbytehq/airbyte/pull/41996) | Fix java interop compilation issue in Config/TransientErrorException.                                                                |
 | 0.41.5      | 2024-07-16 | [\#42011] (https://github.com/airbytehq/airbyte/pull/42011) | Async consumer accepts null default namespace |
 | 0.41.4      | 2024-07-15 | [\#41959](https://github.com/airbytehq/airbyte/pull/41959) | Allow setting `internal_message` in Config/TransientErrorException. Destinations: shorten error message for INCOMPLETE stream status.                          |
