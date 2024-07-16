@@ -1640,17 +1640,30 @@ abstract class DestinationAcceptanceTest {
         config: JsonNode,
         messages: List<io.airbyte.protocol.models.v0.AirbyteMessage>,
         catalog: io.airbyte.protocol.models.v0.ConfiguredAirbyteCatalog,
-        runNormalization: Boolean
+        runNormalization: Boolean,
+        verifyStateAndCounts: Boolean = false
     ) {
         val destinationOutput = runSync(config, messages, catalog, runNormalization)
 
-        val expectedStateMessage =
-            reversed(messages).firstOrNull { m: AirbyteMessage -> m.type == Type.STATE }
+        // TODO: Optionally collect all the state messages and verify each
+        val expectedStateMessages = messages.filter { it.type == Type.STATE }
+        val expectedFinalStateMessage = reversed(expectedStateMessages)
+            .firstOrNull { m: AirbyteMessage -> m.type == Type.STATE }
                 ?: throw IllegalArgumentException(
                     "All message sets used for testing should include a state record"
                 )
 
-        Collections.reverse(destinationOutput)
+        expectedStateMessages.forEach { message ->
+            println("State message: $message")
+        }
+
+        val actualStateMessages = destinationOutput.filter { it.type == Type.STATE }
+        val actualFinalStateMessage = reversed(actualStateMessages)
+            .firstOrNull { m: AirbyteMessage -> m.type == Type.STATE }
+                ?: throw IllegalArgumentException(
+                    "Test destination produced no state messages"
+                )
+
         val actualStateMessage = destinationOutput.filter { it.type == Type.STATE }.first()
         val clone = actualStateMessage.state
         clone.destinationStats = null

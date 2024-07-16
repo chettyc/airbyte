@@ -27,7 +27,6 @@ import org.joda.time.DateTimeZone
 private val LOGGER = KotlinLogging.logger {}
 
 class S3ConsumerFactory {
-    private val DEFAULT_NAMESPACE = ""
 
     private fun onStartFunction(
         storageOperations: BlobStorageOperations,
@@ -65,11 +64,10 @@ class S3ConsumerFactory {
     private fun flushBufferFunction(
         storageOperations: BlobStorageOperations,
         writeConfigs: List<WriteConfig>,
-        catalog: ConfiguredAirbyteCatalog?,
-        defaultNamespace: String
+        catalog: ConfiguredAirbyteCatalog?
     ): FlushBufferFunction {
         val pairToWriteConfig =
-            writeConfigs.associateBy { toNameNamespacePair(it, defaultNamespace) }
+            writeConfigs.associateBy { toNameNamespacePair(it) }
 
         return FlushBufferFunction {
             pair: AirbyteStreamNameNamespacePair,
@@ -79,8 +77,9 @@ class S3ConsumerFactory {
             }
             require(pairToWriteConfig.containsKey(pair)) {
                 String.format(
-                    "Message contained record from a stream %s that was not in the catalog. \ncatalog: %s",
-                    pair,
+                    "Message contained record from a stream [namespace=\"%s\", name=\"%s\"] that was not in the catalog. \ncatalog: %s",
+                    pair.namespace,
+                    pair.name,
                     Jsons.serialize(catalog)
                 )
             }
@@ -142,16 +141,14 @@ class S3ConsumerFactory {
             onStartFunction(storageOps, writeConfigs),
             onCloseFunction(storageOps, writeConfigs),
             S3DestinationFlushFunction(
-                optimalBatchSizeBytes = FileBuffer.MAX_PER_STREAM_BUFFER_SIZE_BYTES,
-                {
-                    SerializedBufferingStrategy(
-                        createFunction,
-                        catalog,
-                        flushBufferFunction(storageOps, writeConfigs, catalog, DEFAULT_NAMESPACE)
-                    )
-                },
-                DEFAULT_NAMESPACE
-            ),
+                optimalBatchSizeBytes = FileBuffer.MAX_PER_STREAM_BUFFER_SIZE_BYTES
+            ) {
+                SerializedBufferingStrategy(
+                    createFunction,
+                    catalog,
+                    flushBufferFunction(storageOps, writeConfigs, catalog)
+                )
+            },
             catalog,
             BufferManager(defaultNamespace = null)
         )
@@ -206,12 +203,11 @@ class S3ConsumerFactory {
         }
 
         private fun toNameNamespacePair(
-            config: WriteConfig,
-            defaultNamespace: String
+            config: WriteConfig
         ): AirbyteStreamNameNamespacePair {
             return AirbyteStreamNameNamespacePair(
                 config.streamName,
-                config.namespace ?: defaultNamespace
+                config.namespace
             )
         }
     }
