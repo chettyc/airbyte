@@ -135,8 +135,7 @@ class S3ConsumerFactory {
                 s3Config,
                 Function<String, BufferStorage> { fileExtension: String ->
                     FileBuffer(fileExtension)
-                },
-                DEFAULT_NAMESPACE
+                }
             )
         return AsyncStreamConsumer(
             outputRecordCollector,
@@ -154,7 +153,7 @@ class S3ConsumerFactory {
                 DEFAULT_NAMESPACE
             ),
             catalog,
-            BufferManager(DEFAULT_NAMESPACE)
+            BufferManager(defaultNamespace = null)
         )
     }
 

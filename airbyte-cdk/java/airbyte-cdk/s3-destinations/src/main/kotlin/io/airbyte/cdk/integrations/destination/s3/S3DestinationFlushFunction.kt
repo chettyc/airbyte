@@ -17,17 +17,20 @@ import java.util.stream.Stream
 
 class S3DestinationFlushFunction(
     override val optimalBatchSizeBytes: Long,
-    private val strategyProvider: () -> BufferingStrategy,
-    private val defaultNamespace: String
+    private val strategyProvider: () -> BufferingStrategy
 ) : DestinationFlushFunction {
 
     override fun flush(streamDescriptor: StreamDescriptor, stream: Stream<PartialAirbyteMessage>) {
-        val namespace = streamDescriptor.namespace ?: defaultNamespace
-        val nameAndNamespace = AirbyteStreamNameNamespacePair(streamDescriptor.name, namespace)
+        val nameAndNamespace = AirbyteStreamNameNamespacePair(streamDescriptor.name, streamDescriptor.namespace)
         val strategy = strategyProvider()
         for (partialMessage in stream) {
             val partialRecord = partialMessage.record!!
             val data =
+                /**
+                 * This should always be null, but if something changes upstream
+                 * to trigger a clone of the record, then `null` becomes `JsonNull`
+                 * and `data == null` goes from `true` to `false`
+                 */
                 if (partialRecord.data == null || partialRecord.data!!.isNull) {
                     Jsons.deserialize(partialMessage.serialized)
                 } else {
