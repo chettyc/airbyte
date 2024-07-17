@@ -12,6 +12,7 @@ import io.airbyte.integrations.base.destination.typing_deduping.DestinationIniti
 import io.airbyte.integrations.base.destination.typing_deduping.Sql
 import io.airbyte.integrations.base.destination.typing_deduping.StreamConfig
 import io.airbyte.integrations.base.destination.typing_deduping.migrators.Migration
+import io.airbyte.integrations.destination.postgres.LOGGER
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
@@ -30,6 +31,7 @@ class PostgresGenerationIdMigration(
         stream: StreamConfig,
         state: DestinationInitialStatus<PostgresState>
     ): Migration.MigrationResult<PostgresState> {
+        LOGGER.info { "starting generationId migration" }
         if (state.initialRawTableStatus.rawTableExists) {
             // The table should exist because we checked for it above, so safe to get it.
             val existingRawTable =
