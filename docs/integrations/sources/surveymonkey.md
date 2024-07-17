@@ -1,72 +1,68 @@
-# SurveyMonkey
+# SurveyMonkey Set up Guide 
 
-This page guides you through the process of setting up the SurveyMonkey source connector.
+This page guides you through the process of setting up a source connector in Airbyte for SurveyMonkey.
 
-:::note
 
-OAuth for Survey Monkey is officially supported only for the US. We are testing how to enable it in the EU at the moment. If you run into any issues, please [reach out to us](mailto:product@airbyte.io) so we can promptly assist you.
+>[!NOTE]
+OAuth for SurveyMonkey is officially supported only for the US. Airbyte is in the process of testing OAuth in the EU. [Contact us](mailto:product@airbyte.io) for further details.
 
-:::
+> [!IMPORTANT]
+**Performance considerations**
+The SurveyMonkey API applies heavy API quotas for default private apps, with the following limits:
+> - 125 requests per minute
+> - 500 requests per day
+>   
+> To add additional requests from this source, you can use the [caching](https://docs.airbyte.com/connector-development/testing-connectors/connector-acceptance-tests-reference/#caching) feature.
 
-<!-- env:oss -->
 
 ## Prerequisites
+<!-- This list assumes that the prerequsites are the same for both Open Source and Airbyte Cloud. IF different, we will need to have 2 sections here as well and move it onto the respective sections below as H2. -->
 
-**For Airbyte Open Source:**
+- Read the [Getting Started Documentation](https://developer.surveymonkey.com/api/v3/#getting-started)
+- Register your application [here](https://developer.surveymonkey.com/apps/)
+- [Obtain an access token](https://docs.airbyte.com/enterprise-setup/api-access-config#step-2-obtain-an-access-token)
 
-- Access Token
 <!-- /env:oss -->
-
-## Setup guide
-
-### Step 1: Set up SurveyMonkey
-
-Please read this [docs](https://developer.surveymonkey.com/api/v3/#getting-started). Register your application [here](https://developer.surveymonkey.com/apps/) Then go to Settings and copy your access token
+## Process Using Open Source
+### Step 1: Read and ensure that you have addressed the items listed in the _Prerequisites_ section above.
 
 ### Step 2: Set up the source connector in Airbyte
+1. Go to your local Airbyte page. <!-- Where is this described? -->
+2. In the left navigation bar, click **Sources**.
+3. In the top-right corner, click **+New Source**.
+4. On the source setup page, select **SurveyMonkey** from the Source type dropdown and enter a name for this connector.
+5. In the **Access Token** field, add the "client_id": "", "client_secret": "" and ensure that it is valid. <!-- Is this the format? -->
+6. Choose the required **Start Date**.
+7. Click **Set up Source**.
+<!-- What happens next? How can you tell if this process is complete and successful? -->
 
 <!-- env:cloud -->
 
-**For Airbyte Cloud:**
+## Process Using Airbyte Cloud
+### Step 1: Read and ensure that you have addressed the items listed in the _Prerequisites_ section above.
 
+### Step 2: Set up the source connector in Airbyte
 1. [Log into your Airbyte Cloud](https://cloud.airbyte.com/workspaces) account.
-2. In the left navigation bar, click **Sources**. In the top-right corner, click **+ new source**.
-3. On the source setup page, select **SurveyMonkey** from the Source type dropdown and enter a name for this connector.
-4. lick `Authenticate your account`.
-5. Log in and Authorize to the SurveyMonkey account
-6. Choose required Start date
-7. click `Set up source`.
-<!-- /env:cloud -->
+2. In the left navigation bar, click **Sources**.
+3. In the top-right corner, click **+New Source**.
+4. On the source setup page, select **SurveyMonkey** from the Source type dropdown and enter a name for this connector.
+5. Click **Authenticate Your Account**.
+6. Log in and Authorize the SurveyMonkey account. <!-- Where is this described? -->
+7. Choose the required **Start Date**.
+8. Click **Set up Source**.
+<!-- What happens next? How can you tell if this process is complete and successful? -->
 
-<!-- env:oss -->
-
-**For Airbyte Open Source:**
-
-1. Go to local Airbyte page.
-2. In the left navigation bar, click **Sources**. In the top-right corner, click **+ new source**.
-3. On the source setup page, select **SurveyMonkey** from the Source type dropdown and enter a name for this connector.
-4. Add **Access Token**
-5. Choose required Start date
-6. Click `Set up source`.
-<!-- /env:oss -->
 
 ## Supported streams and sync modes
+Once you have setup your source connector, you can perform the following taks:
 
-- [Surveys](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys) \(Incremental\)
-- [SurveyPages](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-pages)
-- [SurveyQuestions](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-pages-page_id-questions)
-- [SurveyResponses](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-id-responses-bulk) \(Incremental\)
-- [SurveyCollectors](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-collectors)
-- [Collectors](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-collectors-collector_id-)
+- [Get Surveys](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys) \(Incremental\)
+- [Get SurveyPages](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-pages)
+- [Get SurveyQuestions](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-pages-page_id-questions)
+- [Get SurveyResponses](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-id-responses-bulk) \(Incremental\)
+- [Get SurveyCollectors](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-surveys-survey_id-collectors)
+- [Get Collectors](https://api.surveymonkey.com/v3/docs?shell#api-endpoints-get-collectors-collector_id-)
 
-### Performance considerations
-
-The SurveyMonkey API applies heavy API quotas for default private apps, which have the following limits:
-
-- 125 requests per minute
-- 500 requests per day
-
-To cover more data from this source we use caching.
 
 ## Changelog
 
