@@ -33,6 +33,7 @@ import io.airbyte.protocol.models.v0.AirbyteMessage
 import io.airbyte.protocol.models.v0.AirbyteMessage.Type
 import io.airbyte.protocol.models.v0.AirbyteRecordMessage
 import io.airbyte.protocol.models.v0.AirbyteStateMessage
+import io.airbyte.protocol.models.v0.AirbyteStateStats
 import io.airbyte.protocol.models.v0.AirbyteStream
 import io.airbyte.protocol.models.v0.AirbyteStreamStatusTraceMessage
 import io.airbyte.protocol.models.v0.AirbyteTraceMessage
@@ -462,25 +463,13 @@ abstract class DestinationAcceptanceTest {
                 Jsons.deserialize(it, io.airbyte.protocol.models.v0.AirbyteMessage::class.java)
             }
 
-        val largeNumberRecords =
-            Collections.nCopies(400, messages)
-                .flatten() // regroup messages per stream
-                .sortedWith(
-                    Comparator.comparing { obj: io.airbyte.protocol.models.v0.AirbyteMessage ->
-                            obj.type
-                        }
-                        .thenComparing { message: io.airbyte.protocol.models.v0.AirbyteMessage ->
-                            if (
-                                message.type ==
-                                    io.airbyte.protocol.models.v0.AirbyteMessage.Type.RECORD
-                            )
-                                message.record.stream
-                            else message.toString()
-                        }
-                )
+        /* Replicate the runs of messages and state hundreds of times, but keep trace messages at the end. */
+        val lotsOfRecordAndStateBlocks = Collections.nCopies(400, messages.filter { it.type == Type.RECORD || it.type == Type.STATE })
+        val traceMessages = messages.filter { it.type == Type.TRACE }
+        val concatenated = lotsOfRecordAndStateBlocks.flatten() + traceMessages
 
         val config = getConfig()
-        runSyncAndVerifyStateOutput(config, largeNumberRecords, configuredCatalog, false)
+        runSyncAndVerifyStateOutput(config, concatenated, configuredCatalog, false)
     }
 
     /** Verify that the integration overwrites the first sync with the second sync. */
@@ -1641,35 +1630,42 @@ abstract class DestinationAcceptanceTest {
         messages: List<io.airbyte.protocol.models.v0.AirbyteMessage>,
         catalog: io.airbyte.protocol.models.v0.ConfiguredAirbyteCatalog,
         runNormalization: Boolean,
-        verifyStateAndCounts: Boolean = false
+        verifyStateAndCounts: Boolean = true
     ) {
         val destinationOutput = runSync(config, messages, catalog, runNormalization)
 
-        // TODO: Optionally collect all the state messages and verify each
-        val expectedStateMessages = messages.filter { it.type == Type.STATE }
-        val expectedFinalStateMessage = reversed(expectedStateMessages)
-            .firstOrNull { m: AirbyteMessage -> m.type == Type.STATE }
-                ?: throw IllegalArgumentException(
-                    "All message sets used for testing should include a state record"
-                )
+        var expected = messages.filter { it.type == Type.STATE }
+        var actual = destinationOutput.filter { it.type == Type.STATE }
 
-        expectedStateMessages.forEach { message ->
-            println("State message: $message")
+        if (verifyStateAndCounts) {
+            /* Collect the counts and add them to each expected state message */
+            val stateToCount = mutableMapOf<JsonNode, Int>()
+            messages.fold(0) { acc, message ->
+                if (message.type == Type.STATE) {
+                    stateToCount[message.state.data] = acc
+                    0
+                } else {
+                    acc + 1
+                }
+            }
+
+            expected.forEach { message ->
+                val clone = message.state
+                clone.destinationStats = AirbyteStateStats().withRecordCount(stateToCount[clone.data]!!.toDouble())
+                message.state = clone
+            }
+        } else {
+            /* Null the states and collect only the final messages */
+            val finalActual = actual.last()
+            val clone = finalActual.state
+            clone.destinationStats = null
+            finalActual.state = clone
+
+            expected = listOf(expected.last())
+            actual = listOf(finalActual)
         }
 
-        val actualStateMessages = destinationOutput.filter { it.type == Type.STATE }
-        val actualFinalStateMessage = reversed(actualStateMessages)
-            .firstOrNull { m: AirbyteMessage -> m.type == Type.STATE }
-                ?: throw IllegalArgumentException(
-                    "Test destination produced no state messages"
-                )
-
-        val actualStateMessage = destinationOutput.filter { it.type == Type.STATE }.first()
-        val clone = actualStateMessage.state
-        clone.destinationStats = null
-        actualStateMessage.state = clone
-
-        Assertions.assertEquals(expectedStateMessage, actualStateMessage)
+        Assertions.assertEquals(expected, actual)
     }
 
     @Throws(Exception::class)
